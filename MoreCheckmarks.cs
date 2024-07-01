@@ -45,7 +45,9 @@ namespace MoreCheckmarks
         public static int wishlistPriority = 4;
         public static int barterPriority = 0;
         public static int craftPriority = 1;
+        public static bool showLockedModules = false;
         public static bool showFutureModulesLevels = false;
+        public static bool showFutureBarters = false;
         public static bool showBarter = true;
         public static bool showCraft = true;
         public static bool showFutureCraft = true;
@@ -78,7 +80,7 @@ namespace MoreCheckmarks
         public static JObject locales;
         public static Dictionary<string, string> productionEndProductByID = new Dictionary<string, string>();
         // Barter item name and amount of price by items in price
-        public static List<Dictionary<string, List<KeyValuePair<string, int>>>> bartersByItemByTrader = new List<Dictionary<string, List<KeyValuePair<string, int>>>>();
+        public static List<Dictionary<string, List<KeyValuePair<string, (int count, int loyaltyLevel)>>>> bartersByItemByTrader = new List<Dictionary<string, List<KeyValuePair<string, (int count, int loyaltyLevel)>>>>();
         public static string[] traders = new string[] {"Прапор","Терапевт","Скупщик","Лыжник","Миротворец","Механик", "Барахольщик", "Егерь", "Смотритель", "Художник", "Артём", "Скорпион", "Юрий Крыса", "Лотус", "Присцилла", "Легавый" };
         public static int[] priorities = new int[] {0,1,2,3,4};
         public static bool[] neededFor = new bool[5];
@@ -608,7 +610,7 @@ namespace MoreCheckmarks
             bartersByItemByTrader.Clear();
             for (int i=0; i < assortData.Count; ++i)
             {
-                bartersByItemByTrader.Add(new Dictionary<string, List<KeyValuePair<string, int>>>());
+                bartersByItemByTrader.Add(new Dictionary<string, List<KeyValuePair<string, (int count, int loyaltyLevel)>>>());
                 JArray items = assortData[i]["items"] as JArray;
                 for (int j = 0; j < items.Count; ++j)
                 {
@@ -623,13 +625,14 @@ namespace MoreCheckmarks
                                 string priceTPL = barter[l]["_tpl"].ToString();
                                 if (!priceTPL.Equals(euro) && !priceTPL.Equals(rouble) && !priceTPL.Equals(dollar))
                                 {
-                                    if (bartersByItemByTrader[i].TryGetValue(priceTPL, out List<KeyValuePair<string, int>> barterList))
+                                    var barterRequirements = (count: (int)(barter[l]["count"]), loyaltyLevel: (int)assortData[i]["loyal_level_items"][items[j]["_id"].ToString()]);
+                                    if (bartersByItemByTrader[i].TryGetValue(priceTPL, out List<KeyValuePair<string, (int count, int loyaltyLevel)>> barterList))
                                     {
-                                        barterList.Add(new KeyValuePair<string, int>(items[j]["_tpl"].ToString(), (int)(barter[l]["count"])));
+                                        barterList.Add(new KeyValuePair<string, (int count, int loyaltyLevel)>(items[j]["_tpl"].ToString(), barterRequirements));
                                     }
                                     else
                                     {
-                                        bartersByItemByTrader[i].Add(priceTPL, new List<KeyValuePair<string, int>>() { new KeyValuePair<string, int>(items[j]["_tpl"].ToString(), (int)(barter[l]["count"])) });
+                                        bartersByItemByTrader[i].Add(priceTPL, new List<KeyValuePair<string, (int count, int loyaltyLevel)>>() { new KeyValuePair<string, (int count, int loyaltyLevel)>(items[j]["_tpl"].ToString(), barterRequirements) });
                                     }
                                 }
                             }
@@ -695,6 +698,10 @@ namespace MoreCheckmarks
                     craftPriority = (int)config["craftPriority"];
                     priorities[4] = craftPriority;
                 }
+                if (config["showLockedModules"] != null)
+                {
+                    showLockedModules = (bool)config["showLockedModules"];
+                }
                 if (config["showFutureModulesLevels"] != null)
                 {
                     showFutureModulesLevels = (bool)config["showFutureModulesLevels"];
@@ -702,6 +709,10 @@ namespace MoreCheckmarks
                 if (config["showBarter"] != null)
                 {
                     showBarter = (bool)config["showBarter"];
+                }
+                if (config["showFutureBarters"] != null)
+                {
+                    showFutureBarters = (bool)config["showFutureBarters"];
                 }
                 if (config["needMoreColor"] != null)
                 {
@@ -859,6 +870,26 @@ namespace MoreCheckmarks
 
                         try
                         {
+                            if (!MoreCheckmarksMod.showLockedModules)
+                            {
+                                bool isLocked = false;
+                                // Check if all of the AreaRequirements are fulfilled
+                                foreach (var requirement in requirements)
+                                {
+                                    if (requirement != null && requirement is EFT.Hideout.AreaRequirement && !requirement.Fulfilled)
+                                    {
+                                        // This stage requires other areas to be completed first
+                                        isLocked = true;
+                                    }
+                                }
+
+                                if (isLocked)
+                                {
+                                    // Skip adding item requirements for this stage
+                                    continue;
+                                }
+                            }
+
                             foreach (var requirement in requirements)
                             {
                                 if (requirement != null)
@@ -952,7 +983,7 @@ namespace MoreCheckmarks
                         Stage newStage = ad.StageAt(currentStage.Level + 1);
                         while (newStage != null && newStage.Level != 0)
                         {
-                            if (newStage.Level > ad.CurrentLevel && !showFutureCraft) 
+                            if (newStage.Level > ad.CurrentLevel && !showFutureCraft)
                             {
                                 break;
                             }
@@ -974,7 +1005,7 @@ namespace MoreCheckmarks
                             Requirement[] requirements = productionData.requirements;
 
                             foreach (Requirement baseReq in requirements)
-                            { 
+                            {
                                 if (baseReq.Type == ERequirementType.Item)
                                 {
                                     ItemRequirement itemRequirement = baseReq as ItemRequirement;
@@ -1063,15 +1094,15 @@ namespace MoreCheckmarks
             return false;
         }
 
-        public static List<List<KeyValuePair<string, int>>> GetBarters(string ID)
+        public static List<List<KeyValuePair<string, (int count, int loyaltyLevel)>>> GetBarters(string ID)
         {
-            List<List<KeyValuePair<string, int>>> bartersByTrader = new List<List<KeyValuePair<string, int>>>();
+            List<List<KeyValuePair<string, (int count, int loyaltyLevel)>>> bartersByTrader = new List<List<KeyValuePair<string, (int count, int loyaltyLevel)>>>();
 
             if (showBarter)
             {
                 for (int i = 0; i < bartersByItemByTrader.Count; ++i)
                 {
-                    List<KeyValuePair<string, int>> current = null;
+                    List<KeyValuePair<string, (int count, int loyaltyLevel)>> current = null;
 
                     if (bartersByItemByTrader[i] != null)
                     {
@@ -1080,7 +1111,7 @@ namespace MoreCheckmarks
 
                     if(current == null)
                     {
-                        current = new List<KeyValuePair<string, int>>();
+                        current = new List<KeyValuePair<string, (int count, int loyaltyLevel)>>();
                     }
 
                     bartersByTrader.Add(current);
@@ -1146,7 +1177,7 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
                 bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
                 bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
-                List<List<KeyValuePair<string, int>>> bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
+                List<List<KeyValuePair<string, (int count, int loyaltyLevel)>>> bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId).ToList();
                 bool gotBarters = false;
                 if (bartersByTrader != null)
                 {
@@ -1154,8 +1185,25 @@ namespace MoreCheckmarks
                     {
                         if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
                         {
-                            gotBarters = true;
-                            break;
+                            if (MoreCheckmarksMod.showFutureBarters)
+                            {
+                                gotBarters = true;
+                                break;
+                            }
+                            else
+                            {
+                                foreach (var barter in bartersByTrader[i].ToList())
+                                {
+                                    if (barter.Value.loyaltyLevel <= 1)
+                                    {
+                                        gotBarters = true;
+                                    }
+                                    else
+                                    {
+                                        bartersByTrader[i].Remove(barter);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1266,7 +1314,7 @@ namespace MoreCheckmarks
 
         private static void SetTooltip(EFT.Profile profile, List<string> areaNames, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
                                        EFT.InventoryLogic.Item item, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests,
-                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<List<KeyValuePair<string, int>>> bartersByTrader, bool gotBarters,
+                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<List<KeyValuePair<string, (int count, int loyaltyLevel)>>> bartersByTrader, bool gotBarters,
                                        bool craftRequired, string craftTooltip)
         {
             try
@@ -1421,19 +1469,19 @@ namespace MoreCheckmarks
                             if (item.QuestItem)
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\n " + "\nЭтот предмет связан с {0} активными квестами".Localized(null), arg);
+                                ___string_5 += string.Format("\n\n" + "Item is related to an active {0} quest".Localized(null), arg);
                             }
                             Weapon weapon;
                             ConditionWeaponAssembly condition;
                             if (!gotQuest && (weapon = (item as Weapon)) != null && (condition = (conditionItem as ConditionWeaponAssembly)) != null && Inventory.IsWeaponFitsCondition(weapon, condition, false))
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\n " + "\nЭтот предмет соответствует требованиям активного квеста {0}".Localized(null), arg);
+                                ___string_5 += string.Format("\n\n" + "Item fits the active {0} quest requirements".Localized(null), arg);
                             }
                             if (!gotQuest && item.MarkedAsSpawnedInSession)
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\n " + "\nЭтот предмет, найденый в рейде, нужен для квеста {0}".Localized(null), arg);
+                                ___string_5 += string.Format("\n\n" + "Item that has been found in raid for the {0} quest".Localized(null), arg);
                             }
                         }
                     }
@@ -1448,7 +1496,7 @@ namespace MoreCheckmarks
                 }
                 if (!areaNamesString.Equals(""))
                 {
-                    ___string_5 += string.Format("\n" + "\nНужно" + "<color=#dd831a> {2}" + "</color>" + " для" + (areaNames.Count == 1 ? "" : "") + ":{0}", areaNamesString, possessedCount, requiredCount);
+                    ___string_5 += string.Format("\n" + "\nТребуется ({1}/{2}) для зон" +(areaNames.Count == 1 ? "ы" : "") +":{0}", areaNamesString, possessedCount, requiredCount);
                 }
 
                 // Add wishlist
@@ -1469,13 +1517,13 @@ namespace MoreCheckmarks
                             {
                                 if (!firstBarter)
                                 {
-                                    ___string_5 += "\n" + "\nБартер:";
+                                    ___string_5 += "\n" + "\nБартер".Localized(null) + ":";
                                     firstBarter = true;
                                 }
                                 string bartersString = "\n " + (MoreCheckmarksMod.traders.Length > i ? MoreCheckmarksMod.traders[i] : "\n Новый торговец " + i) + ":";
                                 for (int j = 0; j < bartersByTrader[i].Count; ++j)
                                 {
-                                    bartersString += "\n   <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + bartersByTrader[i][j].Key.LocalizedName() + "</color> (" + bartersByTrader[i][j].Value + ")";
+                                    bartersString += "\n   <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + "> LL" + bartersByTrader[i][j].Value.loyaltyLevel + ": " + bartersByTrader[i][j].Key.LocalizedName() + "</color> (" + bartersByTrader[i][j].Value.count + ")";
                                 }
                                 ___string_5 += bartersString;
                             }
@@ -1493,10 +1541,6 @@ namespace MoreCheckmarks
                 if (item.MarkedAsSpawnedInSession)
                 {
                     ___string_5 += "\n" + "\n<color=#fff5ee>Предмет, найденный в рейде</color>" + "\n";
-                }
-                else
-                {
-                    ___string_5 += "\n ";
                 }
 
                 if (gotQuest || gotAreas || wishlist || gotBarters || craftRequired || item.MarkedAsSpawnedInSession)
@@ -1677,14 +1721,14 @@ namespace MoreCheckmarks
     {
         private static EQuestStatus preStatus;
 
-        // This prefix will run before a quest's status has been set 
+        // This prefix will run before a quest's status has been set
         [HarmonyPatch(typeof(GClass1249), "SetStatus")]
         static void Prefix(GClass1249 __instance)
         {
             preStatus = __instance.QuestStatus;
         }
 
-        // This postfix will run after a quest's status has been set 
+        // This postfix will run after a quest's status has been set
         [HarmonyPatch(typeof(GClass1249), "SetStatus")]
         static void Postfix(GClass1249 __instance)
         {
