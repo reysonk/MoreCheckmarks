@@ -1175,7 +1175,7 @@ namespace MoreCheckmarks
                 bool craftRequired = MoreCheckmarksMod.showCraft && MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
                 MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
-                bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
+                bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("квест")));
                 bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
                 List<List<KeyValuePair<string, (int count, int loyaltyLevel)>>> bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId).ToList();
                 bool gotBarters = false;
@@ -1321,7 +1321,7 @@ namespace MoreCheckmarks
             {
 
                 // Reset string
-                ___string_5 = "Наличие:\n" + "  Найденых в рейде: <color=#dd831a>" + possessedQuestCount + "\n" + "  </color>Всего в схроне: " + possessedCount;
+                ___string_5 = "Наличие:\n" + "  Найденных в рейде: <color=#dd831a>" + possessedQuestCount + "\n" + "  </color>Всего в схроне: " + possessedCount;
 
                 // Add quests
                 bool gotQuest = false;
