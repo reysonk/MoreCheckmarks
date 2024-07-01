@@ -1421,19 +1421,19 @@ namespace MoreCheckmarks
                             if (item.QuestItem)
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nПредмет связан с {0} активными квестами".Localized(null), arg);
+                                ___string_5 += string.Format("\n " + "\nЭтот предмет связан с {0} активными квестами".Localized(null), arg);
                             }
                             Weapon weapon;
                             ConditionWeaponAssembly condition;
                             if (!gotQuest && (weapon = (item as Weapon)) != null && (condition = (conditionItem as ConditionWeaponAssembly)) != null && Inventory.IsWeaponFitsCondition(weapon, condition, false))
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nПредмет соответствует требованиям активного квеста {0}".Localized(null), arg);
+                                ___string_5 += string.Format("\n " + "\nЭтот предмет соответствует требованиям активного квеста {0}".Localized(null), arg);
                             }
                             if (!gotQuest && item.MarkedAsSpawnedInSession)
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nПредмет, который был найден в рейде для квеста {0}".Localized(null), arg);
+                                ___string_5 += string.Format("\n " + "\nЭтот предмет, найденый в рейде, нужен для квеста {0}".Localized(null), arg);
                             }
                         }
                     }
@@ -1448,13 +1448,13 @@ namespace MoreCheckmarks
                 }
                 if (!areaNamesString.Equals(""))
                 {
-                    ___string_5 += string.Format("\n" + "\nНужно ({1}/{2}) для убежища" + ":{0}", areaNamesString, possessedCount, requiredCount);
+                    ___string_5 += string.Format("\n" + "\nНужно" + "<color=#dd831a> {2}" + "</color>" + " для" + (areaNames.Count == 1 ? "" : "") + ":{0}", areaNamesString, possessedCount, requiredCount);
                 }
 
                 // Add wishlist
                 if (wishlist)
                 {
-                    ___string_5 += string.Format("\n" + "\nВ {0}", "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Списке желаний</color>");
+                    ___string_5 += string.Format("\n" + "\nВ {0}", "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">списке желаний</color>");
                 }
 
                 // Add barters
