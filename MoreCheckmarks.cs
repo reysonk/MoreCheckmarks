@@ -1209,14 +1209,13 @@ namespace MoreCheckmarks
                 }
 
                 // Setup label for inspect view
-                if (____questItemLabel != null)
+                if (____questItemLabel != null) 
                 {
                     // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
                     if (questItem)
                     {
                         ____questItemLabel.text = "КВЕСТОВЫЙ ПРЕДМЕТ";
                     }
-                    ____questItemLabel.gameObject.SetActive(questItem);
                 }
 
                 MoreCheckmarksMod.neededFor[0] = questItem;
@@ -1274,7 +1273,7 @@ namespace MoreCheckmarks
                 }
                 else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
                 {
-                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.gray);
                 }
 
                 // Set tooltip based on requirements
@@ -1541,6 +1540,10 @@ namespace MoreCheckmarks
                 if (item.MarkedAsSpawnedInSession)
                 {
                     ___string_5 += "\n" + "\n<color=#fff5ee>Предмет, найденный в рейде</color>" + "\n";
+                }
+                else if (item.MarkedAsSpawnedInSession)
+                {
+                    ___string_5 += "\n ";
                 }
 
                 if (gotQuest || gotAreas || wishlist || gotBarters || craftRequired || item.MarkedAsSpawnedInSession)
