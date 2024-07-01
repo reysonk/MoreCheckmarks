@@ -1209,13 +1209,14 @@ namespace MoreCheckmarks
                 }
 
                 // Setup label for inspect view
-                if (____questItemLabel != null) 
+                if (____questItemLabel != null)
                 {
                     // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
                     if (questItem)
                     {
                         ____questItemLabel.text = "КВЕСТОВЫЙ ПРЕДМЕТ";
                     }
+                    ____questItemLabel.gameObject.SetActive(questItem);
                 }
 
                 MoreCheckmarksMod.neededFor[0] = questItem;
@@ -1541,7 +1542,7 @@ namespace MoreCheckmarks
                 {
                     ___string_5 += "\n" + "\n<color=#fff5ee>Предмет, найденный в рейде</color>" + "\n";
                 }
-                else if (item.MarkedAsSpawnedInSession)
+                else
                 {
                     ___string_5 += "\n ";
                 }
