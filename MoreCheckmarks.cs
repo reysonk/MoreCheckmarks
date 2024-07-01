@@ -1528,7 +1528,7 @@ namespace MoreCheckmarks
                     {
                         // format is: "gs01", "gs02", etc
                         var gunsmithTaskNumber = kvp.Key.Substring(2);
-                        ___string_5 += "\n" + "\n<color=#fff5ee#dd831a>Требуется для квеста</color> <#dd831a>Оружейник " + gunsmithTaskNumber + "</color>";
+                        ___string_5 += "\n" + "\nТребуется для квеста <#dd831a>Оружейник " + gunsmithTaskNumber + "</color>";
                         break;
                     }
                 }
